@@ -1,5 +1,4 @@
 import pickle
-from joblib import load
 import numpy as np
 import pandas as pd
 from flask import Flask, request, jsonify
@@ -8,7 +7,7 @@ import requests
 from datetime import datetime
 from pytz import timezone
 
-# Load the Random Forest model from the pickle file
+# Load the Random Forest model from pickle file
 with open('model.pkl', 'rb') as file:
     model = pickle.load(file)
 
@@ -17,10 +16,6 @@ openweatherapikey = '35bfcb7e538a5dd77b3f73e2eaf8f6a3'
 # Flask App Initialization
 app = Flask(__name__)
 CORS(app)
-
-# Convert square feet to square meters
-def convert_area_to_sqm(area_in_fts):
-    return area_in_fts * 0.092903
 
 # Fetch real-time weather data from OpenWeather API
 def get_weather_data(lat, lon, api_key):
@@ -35,7 +30,6 @@ def get_weather_data(lat, lon, api_key):
         wind_speed = data['wind']['speed']
         pressure = data['main']['pressure']
 
-        # Get current time and convert to day of year
         now = datetime.now()
         day_of_year = now.timetuple().tm_yday
         time_of_day_s = 10 * 60 * 60  # Fixed time for 10:00 AM
@@ -50,7 +44,6 @@ def get_weather_data(lat, lon, api_key):
             'TimeOfDay(s)': time_of_day_s
         }
     else:
-        print(f"Failed to fetch weather data: {data}")  # Debugging info
         return None
 
 # Prediction function
@@ -65,7 +58,6 @@ def predict_solar_energy(temp, humidity, wind_dir, wind_speed, day_of_year, time
         'TimeOfDay(s)': [time_of_day_s]
     })
 
-    # Predict solar radiation (kWh/m²/day)
     solar_radiation = model.predict(input_data)[0]
     solar_density = solar_radiation / 24
     total_power_gen_capacity = solar_density * area
@@ -83,30 +75,26 @@ def predict_solar_energy(temp, humidity, wind_dir, wind_speed, day_of_year, time
         'num_solar_panels': num_solar_panels,
         'daily_energy_production (kWh)': daily_energy_production,
         'annual_energy_production (kWh)': annual_energy_production,
-        'annual_cost_savings': annual_cost_savings,
-        'total_investment': total_investment,
+        'annual_cost_savings (₹)': annual_cost_savings,
+        'total_investment (₹)': total_investment,
         'payback_period (years)': payback_period
     }
 
-# Get values based on the purpose
 def get_values(purpose):
-    purpose = purpose.strip().lower()  # Normalize input for consistency
-    if purpose == "industry" or purpose == "agriculture":
+    if purpose == "Industry" or purpose == "Agriculture":
         panel_power_rating = 0.3  # kW
         derate_factor = 0.8
-        panel_cost = 18000  # ₹ per panel (polysrystalline panel cost in India)
-        installation_cost = 50000  # ₹ (installation cost in India)
-    elif purpose == "it" or purpose == "domestic":
+        panel_cost = 18000  # ₹ per panel
+        installation_cost = 50000  # ₹
+    elif purpose == "IT" or purpose == "Domestic":
         panel_power_rating = 0.35  # kW
         derate_factor = 0.85
-        panel_cost = 25000  # ₹ per panel (monocrystalline panel cost in India)
-        installation_cost = 60000  # ₹ (installation cost in India)
+        panel_cost = 25000  # ₹ per panel
+        installation_cost = 60000  # ₹
     else:
         raise ValueError("Invalid purpose")
     
     return panel_power_rating, derate_factor, panel_cost, installation_cost
-
-# Flask route for prediction
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.json
@@ -117,8 +105,13 @@ def predict():
     purpose = data.get('category')
 
     # Validate inputs
-    if not area_in_fts or not isinstance(area_in_fts, (int, float)):
-        return jsonify({'error': 'Invalid or missing area size'}), 400
+    if not area_in_fts:
+        return jsonify({'error': 'Missing area size'}), 400
+    
+    try:
+        area = float(area_in_fts)  # Convert area to float
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid area size. Must be a numeric value.'}), 400
 
     if not marker_coords or not isinstance(marker_coords, dict):
         return jsonify({'error': 'Invalid or missing marker coordinates'}), 400
@@ -138,9 +131,6 @@ def predict():
     if not weather_data:
         return jsonify({'error': 'Failed to fetch weather data'}), 500
 
-    # Convert area to square meters (if needed)
-    area = area_in_fts
-
     # Get purpose-specific values
     try:
         panel_power_rating, derate_factor, panel_cost, installation_cost = get_values(purpose)
@@ -155,9 +145,7 @@ def predict():
         weather_data['Pressure'], area, panel_power_rating,
         5, derate_factor, 8, panel_cost, installation_cost
     )
-    print(result)
     return jsonify(result)
 
-# Run the Flask app
 if __name__ == '__main__':
     app.run(debug=True)

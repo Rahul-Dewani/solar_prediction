@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenStreetMap with Search, Drawing, and Street View Toggle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css" />
+    <style>
+        /* Reset & Base */
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            /* Prevent scrolling */
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        /* Fullscreen Map */
+        #map {
+            height: 100vh;
+            /* Full viewport height */
+            width: 100vw;
+            /* Full viewport width */
+        }
+
+        /* Custom Search Bar */
+        .search-bar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            background-color: white;
+            padding: 10px;
+            border-radius: 50px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-bar input {
+            border: none;
+            outline: none;
+            padding: 10px;
+            border-radius: 50px;
+            width: 250px;
+            font-size: 16px;
+        }
+
+        .search-bar button {
+            background-color: black;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        .search-bar input::placeholder {
+            color: rgba(0, 0, 0, 0.5);
+            /* Placeholder color */
+        }
+
+        /* Align zoom controls and map tools to bottom-left */
+        .leaflet-bottom.leaflet-left {
+            bottom: 20px !important;
+            left: 20px !important;
+        }
+
+        /* Toggle Button */
+        .toggle-view-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background-color: black;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Island Popup (Right Side) */
+        .island-popup {
+            position: absolute;
+            top: 100px;
+            right: 20px;
+            z-index: 1000;
+            width: 300px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            font-size: 14px;
+            display: none;
+            /* Initially hidden */
+        }
+
+        .island-popup h3 {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .island-popup .coordinates {
+            font-size: 12px;
+            color: gray;
+            margin-top: 10px;
+        }
+
+        .island-popup .irradiance {
+            color: darkorange;
+            font-weight: bold;
+        }
+
+        .island-popup .weather {
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        .island-popup .area {
+            font-size: 12px;
+            color: #333;
+            margin-top: 10px;
+        }
+
+        .island-popup input[type="text"] {
+            width: 100%;
+            padding: 5px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        /* Button to future report/analysis page */
+        .island-popup .report-btn {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        /* Dropdown menu */
+        .dropdown {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+            border-radius: 15px;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+
+        .dropdown button {
+            background-color: white;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px 0;
+            text-align: center;
+        }
+
+        .dropdown button:hover {
+            background-color: #ddd;
+        }
+
+        .dropdown-toggle-btn {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background-color: black;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Custom Search Bar -->
+    <div class="search-bar">
+        <input type="text" id="location-input" placeholder="Search location...">
+        <button id="search-btn">GO</button>
+    </div>
+
+    <!-- Toggle View Button -->
+    <button class="toggle-view-btn" id="toggle-view-btn">Street View</button>
+
+    <!-- Fullscreen Map Container -->
+    <div id="map"></div>
+
+    <!-- Island Popup (Right Side) -->
+    <div class="island-popup" id="island-popup">
+        <h3><b id="island-name">Location Name</b></h3>
+        <p id="island-address">123, Coastal Avenue, Tropical Bay</p>
+        <p class="coordinates" id="island-coordinates">Coordinates: 12.9716° N, 77.5946° E</p>
+        <p class="irradiance" id="island-irradiance">Irradiance: <span id="irradiance-data">Loading...</span></p>
+        <p class="weather" id="island-weather">Weather: <span id="weather-data">Loading...</span></p>
+        <p class="area">Area: <input type="text" id="area-input" value="1500 sq meters"></p>
+        <a href="#" class="report-btn" id="island-report-btn">View Report/Analysis</a>
+    </div>
+
+    <!-- Dropdown Toggle Button -->
+    <button class="dropdown-toggle-btn" id="dropdown-toggle-btn">Choose your purpose</button>
+
+    <!-- Dropdown Menu -->
+    <div class="dropdown" id="dropdown">
+        <button class="dropdown-option">Agriculture</button>
+        <button class="dropdown-option">IT</button>
+        <button class="dropdown-option">Industry</button>
+        <button class="dropdown-option">Domestic</button>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
+
+    <script>
+        // Initialize the map with a default location (Mumbai)
+        var map = L.map('map', {
+            zoomControl: false // Disable default zoom control (we'll manually add it to bottom-left)
+        }).setView([19.0760, 72.8777], 13); // Set view to Mumbai coordinates
+
+        var osmTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        var googleStreetView = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            attribution: '&copy; <a href="https://www.google.com/maps">Google Maps</a>'
+        });
+
+        var streetViewEnabled = false; // Toggle state
+
+        document.getElementById('toggle-view-btn').addEventListener('click', function () {
+            if (!streetViewEnabled) {
+                map.removeLayer(osmTileLayer);
+                map.addLayer(googleStreetView);
+                this.textContent = "Map View";
+            } else {
+                map.removeLayer(googleStreetView);
+                map.addLayer(osmTileLayer);
+                this.textContent = "Street View";
+            }
+            streetViewEnabled = !streetViewEnabled;
+        });
+
+        L.control.zoom({
+            position: 'bottomleft'
+        }).addTo(map);
+
+        var marker = null;
+        function addMarker(latlng) {
+            if (marker) {
+                map.removeLayer(marker);
+            }
+            marker = L.marker(latlng).addTo(map);
+        }
+
+        function calculateIrradiance(lat) {
+            const maxIrradiance = 1000;
+            const irradiance = maxIrradiance * Math.cos(Math.abs(lat) * Math.PI / 180);
+            return `Irradiance: ${irradiance.toFixed(2)} W/m²`;
+        }
+
+        function getWeather(lat, lon) {
+            if (lat > 0) {
+                return `Weather: Sunny, 30°C`;
+            } else {
+                return `Weather: Cloudy, 22°C`;
+            }
+        }
+
+        let selectedCoordinates = null;
+        let selectedArea = null;
+        let selectedPurpose = 'None';
+
+        function updatePopupContent(latlng, locationData) {
+            document.getElementById('island-name').textContent = locationData.name || 'Unknown Location';
+            document.getElementById('island-address').textContent = locationData.address || 'Unknown Address';
+            document.getElementById('island-coordinates').textContent = `Coordinates: ${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`;
+
+            selectedCoordinates = latlng;
+
+            document.getElementById('weather-data').textContent = getWeather(latlng.lat, latlng.lng);
+            const irradiance = calculateIrradiance(latlng.lat);
+            document.getElementById('irradiance-data').textContent = irradiance;
+
+            document.getElementById('area-input').value = locationData.area || 'N/A';
+            document.getElementById('island-popup').style.display = 'block';
+        }
+
+        document.getElementById('search-btn').addEventListener('click', function () {
+            var input = document.getElementById('location-input').value;
+            if (input) {
+                var geocoder = L.Control.Geocoder.nominatim();
+                geocoder.geocode(input, function (results) {
+                    if (results.length > 0) {
+                        var latlng = results[0].center;
+                        map.setView(latlng, 13);
+                        addMarker(latlng);
+                        var locationData = {
+                            name: results[0].properties.display_name,
+                            address: results[0].properties.address,
+                            area: "Select region to calculate area"
+                        };
+                        updatePopupContent(latlng, locationData);
+                    } else {
+                        alert('Location not found. Please try again.');
+                    }
+                });
+            } else {
+                alert('Please enter a location.');
+            }
+        });
+
+        var drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+
+        var drawControl = new L.Control.Draw({
+            position: 'bottomleft',
+            edit: {
+                featureGroup: drawnItems
+            },
+            draw: {
+                polygon: {
+                    allowIntersection: false
+                },
+                rectangle: true,
+                circle: false,
+                marker: false,
+                polyline: false
+            }
+        });
+        map.addControl(drawControl);
+
+        map.on(L.Draw.Event.CREATED, function (event) {
+            var layer = event.layer;
+            if (layer instanceof L.Polygon) {
+                layer.addLatLng(layer.getLatLngs()[0][0]);
+            }
+            drawnItems.addLayer(layer);
+
+            var area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]) || 'N/A';
+
+            var latlng = layer.getLatLngs()[0][0];
+            var locationData = {
+                name: 'Custom Area',
+                address: 'Coordinates Area',
+                area: (area).toFixed(2) + ' sq meters'
+            };
+            selectedArea = area.toFixed(2);
+            updatePopupContent(latlng, locationData);
+        });
+
+        document.getElementById('island-popup').addEventListener('click', function () {
+            this.style.display = 'none';
+        });
+
+        var dropdown = document.getElementById("dropdown");
+        var dropdownToggle = document.getElementById("dropdown-toggle-btn");
+
+        dropdownToggle.addEventListener("click", function () {
+            dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
+        });
+
+        var options = document.querySelectorAll('.dropdown-option');
+        options.forEach(option => {
+            option.addEventListener('click', function () {
+                selectedPurpose = this.textContent;
+                dropdownToggle.textContent = selectedPurpose;
+                dropdown.style.display = "none";
+            });
+        });
+
+        document.getElementById('island-report-btn').addEventListener('click', function (event) {
+            event.preventDefault();
+            if (selectedCoordinates && selectedArea && selectedPurpose) {
+                // Get area from the input field, in case the user edited it
+                var areaInputValue = document.getElementById('area-input').value;
+                // Remove any non-digit characters (like 'sq meters') and parse as float
+                var areaValue = parseFloat(areaInputValue.replace(/[^\d.-]/g, ''));
+                if (isNaN(areaValue) || areaValue <= 0) {
+                    alert("Please enter a valid area.");
+                    return;
+                }
+                // Create the data object based on user inputs
+                const data = {
+                    areaSize: areaValue, // Ensure areaSize is a number
+                    marker: {
+                        lat: selectedCoordinates.lat,
+                        lng: selectedCoordinates.lng
+                    },
+                    category: selectedPurpose
+                };
+
+                // Make the POST request to your Flask backend
+                fetch('http://localhost:5000/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log(data);
+                        // Store the data in localStorage
+                        localStorage.setItem('solarData', JSON.stringify(data));
+
+                        // Redirect to dashboard.html
+                        window.location.href = 'dashboard.html';
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+            } else {
+                alert("Please select an area and a category first.");
+            }
+        });
+    </script>
+
+
+</body>
+
+</html>

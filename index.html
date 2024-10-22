@@ -1,16 +1,301 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Energy Revolution</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roobert:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css"> <!-- Link to CSS file -->
+    <style>
+        /* Reset & Base */
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roobert', sans-serif; /* Updated to Roobert for fiery look */
+            height: 100%;
+            overflow-x: hidden;
+            background-color: #111;
+            scroll-behavior: smooth; /* Smooth scrolling */
+        }
 
-    <title>Intelligent Solar Predictor</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+        nav {
+            display: flex;
+            justify-content: space-between; /* Aligns the logo and links */
+            align-items: center; /* Vertically centers the content */
+            padding: 20px 50px;
+            position: fixed;
+            width: 100%;
+            z-index: 10;
+            background: transparent; /* Fully transparent background */
+            box-shadow: none;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Add sticky background effect */
+        nav.scrolled {
+            background-color: rgba(17, 17, 17, 0.8); /* Dark background */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo img {
+            height: 40px;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            justify-content: flex-end; /* Aligns navigation to the right */
+            gap: 30px; /* Space between links */
+            flex-wrap: wrap; /* Allows wrapping of items */
+        }
+
+        .nav-links li a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links li a:hover {
+            color: #ff6700; /* Color change on hover */
+        }
+
+        /* Hero Section with Full-Screen Background Image and Gradient */
+        .hero {
+            height: 100vh;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('sunset.jpg') no-repeat center center/cover;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 100px 50px 0; /* Add extra padding at the top to push content below the nav */
+            color: white;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-content {
+            max-width: 500px;
+            opacity: 0;
+            animation: fadeIn 2s ease forwards;
+            z-index: 2; /* Ensure the hero content stays above the background */
+        }
+
+        h1 {
+            font-size: 3.5rem; /* Increase font size for a bold look */
+            margin: 0 0 20px;
+            line-height: 1.2;
+            color: #F97316; /* Fiery orange */
+        }
+
+        p {
+            font-size: 1.1rem; /* Slightly increase text size for readability */
+            margin-bottom: 30px;
+            color: #f9f9f9;
+        }
+
+        .cta {
+            padding: 12px 40px;
+            background-color: #ff6700;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        .cta:hover {
+            background-color: #ff4500;
+            transform: scale(1.05); /* Subtle scaling on hover */
+        }
+
+        /* Keynotes Section */
+        .keynotes {
+            height: 125vh;
+            background: url('image-2.jpg') no-repeat center center/cover;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            color: white;
+            padding: 50px;
+        }
+
+        .keynotes-content {
+            max-width: 600px;
+        }
+
+        .keynotes-content h2 {
+            font-size: 2.5rem;
+            color: #F59E0B; /* Gold color for headings */
+        }
+
+        .keynotes-content p {
+            font-size: 1.1rem;
+        }
+
+        /* Keypoints Style */
+        .keypoints {
+            display: flex;
+            flex-direction: column; /* Vertical alignment */
+            gap: 20px;
+            padding: 20px; /* Padding for keypoints */
+        }
+
+        .keypoint {
+            background-color: rgba(255, 255, 255, 0.1);
+            height: 200px; /* Increased height for larger blocks */
+            position: relative;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+            cursor: pointer;
+            text-align: left;
+            padding: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .keypoint:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-10px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .keypoint .title {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .hover-content {
+            opacity: 0;
+            position: absolute;
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            text-align: left;
+            transition: opacity 0.3s ease;
+        }
+
+        .keypoint:hover .title {
+            opacity: 0;
+        }
+
+        .keypoint:hover .hover-content {
+            opacity: 1;
+        }
+
+        /* Footer */
+        footer {
+            padding: 20px;
+            background-color: #111;
+            color: #aaa;
+            text-align: center;
+            position: relative; /* Footer stays in its place */
+            clear: both; /* Ensure footer is below floated elements */
+            margin-top: 20px; /* Space above footer */
+        }
+
+        footer .copyright {
+            margin-top: 20px; /* Adjust margin to avoid overlap */
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Responsive Design for Navigation Bar */
+        @media screen and (max-width: 768px) {
+            nav {
+                padding: 10px 20px;
+                flex-direction: column; /* Stack items vertically */
+                align-items: flex-start; /* Aligns items to the start */
+            }
+
+            .nav-links {
+                justify-content: center; /* Center links on small screens */
+                gap: 15px;
+                width: 100%; /* Full width for links */
+                text-align: center; /* Center text */
+            }
+
+            .nav-links li a {
+                font-size: 0.9rem;
+                padding: 10px; /* Add some padding for better touch targets */
+            }
+
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+
+            .cta {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Transparent Navigation Bar with Logo -->
+    <nav>
+        <div class="logo">
+            <img src="logo.png" alt="Company Logo"> <!-- Replace with actual logo path -->
+        </div>
+        <ul class="nav-links">
+            <li><a href="solar-101.html">Solar 101</a></li>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="#about">About Us</a></li>
+            <li><a href="map.html">Check</a></li> <!-- Redirect to map.html -->
+        </ul>
+    </nav>
+
+    <!-- Hero Section with Full Background Image -->
+    <div class="hero">
+        <div class="hero-content">
+            <h1>Start Energy Revolution from Your Community</h1>
+            <p>Sustainable technologies have never been so affordable. Produce and exchange energy, maximizing the power of renewable sources.</p>
+            <a href="map.html" class="cta">Check My Roof</a> <!-- Redirect to full-screen map page -->
+        </div>
+    </div>
+
+    <!-- Keynotes Section with Background Image -->
+    <section class="keynotes" id="keynotes">
+        <div class="keynotes-content">
+            <h2>Why Solar Energy is Essential</h2>
+            <p>Solar energy is a sustainable and clean energy source that reduces carbon footprint, promotes energy independence, and provides significant savings on energy bills.</p>
+            <div class="keypoints">
+                <div class="keypoint">
+                    <h3 class="title">Energy Decentralization</h3>
+                    <div class="hover-content">
+                        <p>An innovative approach to energy production, storage, and distribution adapted for each community's needs.</p>
+                    </div>
+                </div>
+                <div class="keypoint">
+                    <h3 class="title">Eco-Friendly Sustainability</h3>
+                    <div class="hover-content">
+                        <p>Maximize the potential of renewable energy for a sustainable future.</p>
+                    </div>
+                </div>
+                <div class="keypoint">
+                    <h3 class="title">Power Exchange</h3>
+                    <div class="hover-content">
+                        <p>Autonomous, decentralized power exchange for community-driven energy management.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer Section -->
+    <footer>
+        <p>&copy; 2024 Solar Energy Revolution. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+        // Sticky navigation bar
+        window.addEventListener('scroll', function() {
+            const nav = document.querySelector('nav');
+            nav.classList.toggle('scrolled', window.scrollY > 50);
+        });
+    </script>
+</body>
 </html>

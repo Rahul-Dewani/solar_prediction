@@ -1,0 +1,216 @@
+/* Reset & Base */
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: 'Montserrat', sans-serif;
+    height: 100%;
+    overflow-x: hidden;
+    background-color: #111;
+    scroll-behavior: smooth; /* Smooth scrolling */
+}
+
+nav {
+    display: flex;
+    justify-content: space-between; /* Aligns the logo and links */
+    align-items: center; /* Vertically centers the content */
+    padding: 20px 50px;
+    position: fixed;
+    width: 100%;
+    z-index: 10;
+    background: transparent; /* Fully transparent background */
+    box-shadow: none;
+}
+
+.logo img {
+    height: 40px;
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    justify-content: flex-end; /* Aligns navigation to the right */
+    gap: 30px; /* Space between links */
+    flex-wrap: wrap; /* Allows wrapping of items */
+}
+
+.nav-links li {
+    margin: 0;
+}
+
+.nav-links li a {
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.nav-links li a:hover {
+    color: #ff6700; /* Color change on hover */
+}
+
+/* Hero Section with Full-Screen Background Image and Gradient */
+.hero {
+    height: 100vh;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('sunset.jpg') no-repeat center center/cover;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 100px 50px 0; /* Add extra padding at the top to push content below the nav */
+    color: white;
+    position: relative;
+    z-index: 1;
+}
+
+.hero-content {
+    max-width: 500px;
+    opacity: 0;
+    animation: fadeIn 2s ease forwards;
+    z-index: 2; /* Ensure the hero content stays above the background */
+}
+
+h1 {
+    font-size: 2.5rem;
+    margin: 0 0 20px;
+    line-height: 1.2;
+}
+
+p {
+    font-size: 1rem;
+    margin-bottom: 30px;
+}
+
+.cta {
+    padding: 10px 20px;
+    background-color: #ff6700;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.cta:hover {
+    background-color: #ff4500;
+}
+
+/* Keynotes Section with Background Image */
+.keynotes {
+    height: 125vh;
+    background: url('image-2.jpg') no-repeat center center/cover;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    color: white;
+    padding: 50px;
+}
+
+.keynotes-content {
+    max-width: 600px;
+}
+
+.keynotes-content h2 {
+    font-size: 2rem;
+}
+
+.keynotes-content p {
+    font-size: 1rem;
+}
+
+/* Keypoints Style */
+.keypoints {
+    display: flex;
+    flex-direction: column; /* Vertical alignment */
+    gap: 20px; 
+    padding: 20px; /* Padding for keypoints */
+}
+
+.keypoint {
+    background-color: rgba(255, 255, 255, 0.1);
+    height: 200px; /* Increased height for larger blocks */
+    position: relative; 
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease; 
+    cursor: pointer; 
+    text-align: left; 
+    padding: 20px; 
+    border-radius: 10px; 
+    overflow: hidden; 
+}
+
+.keypoint:hover { 
+    background-color: rgba(255, 255, 255, 0.3); 
+    transform: translateY(-10px); 
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); 
+}
+
+.keypoint .title { 
+    font-size: 1.5rem; 
+    margin-bottom: 10px; 
+}
+
+.hover-content { 
+    opacity: 0; 
+    position: absolute; 
+    top: 50%; 
+    left: 20px; 
+    transform: translateY(-50%); 
+    text-align: left; 
+    transition: opacity 0.3s ease; 
+}
+
+.keypoint:hover .title { 
+    opacity: 0; 
+}
+
+.keypoint:hover .hover-content { 
+    opacity: 1; 
+}
+
+/* Footer */
+footer { 
+    padding: 20px; 
+    background-color: #111; 
+    color: #aaa; 
+    text-align: center; 
+    position: relative; /* Footer stays in its place */
+    clear: both; /* Ensure footer is below floated elements */
+    margin-top: 20px; /* Space above footer */
+}
+
+/* Copyright Section */
+footer .copyright {
+    margin-top: 20px; /* Adjust margin to avoid overlap */
+}
+
+/* Animations */
+@keyframes fadeIn { 
+    to { opacity: 1; } 
+}
+
+/* Responsive Design for Navigation Bar */
+@media screen and (max-width: 768px) { 
+    nav { 
+        padding: 10px 20px;  
+        flex-direction: column; /* Stack items vertically */  
+        align-items: flex-start; /* Aligns items to the start */  
+    }
+
+    .nav-links {  
+        justify-content: center; /* Center links on small screens */  
+        gap: 15px;  
+        width: 100%; /* Full width for links */  
+        text-align: center; /* Center text */  
+    }
+
+    .nav-links li a {  
+        font-size: 0.9rem;  
+        padding: 10px; /* Add some padding for better touch targets */  
+    }
+
+    .hero-content h1 {  
+        font-size: 2rem;  
+    }
+
+    .cta {  
+        font-size: 1rem;  
+    }  
+}
