@@ -1,0 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&family=Tilt+Neon&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.Navbar {
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+*{
+    font-family: "Montserrat", sans-serif;
+}
+
+.text{
+    font-weight: 1000;
+}
+
+.icon-wrapper:hover {
+    background-color: rgba(0, 0, 0, 0.9); /* Darker on hover */
+  }
+  
